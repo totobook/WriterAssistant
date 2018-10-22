@@ -11,9 +11,14 @@
         "Other"
     ],
     "activationEvents": [
-        "onLanguage:markdown"
+        "onLanguage:markdown",
+        "onLanguage:plaintext"
     ],
     "main": "./out/extension",
+    "repository": {
+		"type": "git",
+		"url": "https://github.com/totobook/WriterAssistant.git"
+	},
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",

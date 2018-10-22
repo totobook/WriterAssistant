@@ -15,11 +15,7 @@ export function deactivate() {
 }
 
 class WriterAssistant {
-    private _statusBarItem: StatusBarItem;
-
-    constructor() {
-        this._statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
-    }
+    private _statusBarItem!: StatusBarItem;
 
     public updateStatus() {
         // 値がなければステータスバーの左側の情報を取得
@@ -37,7 +33,7 @@ class WriterAssistant {
 
         // エディタ内のドキュメントを取得
         let doc = editor.document;
-        if(doc.languageId === 'markdown' || doc.languageId === 'txt') {
+        if(doc.languageId === 'markdown') {
             let word_count = this._getWordCount(doc);
             this._statusBarItem.text = `${word_count}文字`;
             this._statusBarItem.show();
@@ -49,16 +45,18 @@ class WriterAssistant {
 
     // 文字数カウント（非ASCII文字以外が対象）
     private _getWordCount(doc: TextDocument): number {
-        let count = 0;
-        for (let i = 0; i < doc.lineCount; i++) {
-            const line = doc.lineAt(i).text;
-            if (line.length > 0 && line[0] !== '#') {
-                for (let j = 0; j < line.length; j++) {
-                    if (line.charCodeAt(j) > 127){ count++; }
-                }
-            }
+        let docContent = doc.getText();
+        // カウントに含めない文字を削除する
+        docContent = docContent
+            .replace(/\s/g, '') // すべての空白文字
+            .replace(/\#/g, '')  // すべてのタイトル記号
+            .replace(/《(.+?)》/g, '')  // ルビ範囲指定記号とその中の文字
+            .replace(/[\|｜]/g, '');    // ルビ開始記号
+        let characterCount = 0;
+        if (docContent !== "") {
+            characterCount = docContent.length;
         }
-        return count;
+        return characterCount;
     }
 
     // リソース開放用
@@ -77,8 +75,8 @@ class WriterAssistantController {
 
         let subscriptions:Disposable[] = [];
         // カーソル位置変更時とアクティブエディタが変更されたときイベント起動
-        window.onDidChangeTextEditorSelection(this._onEvent, subscriptions);
-        window.onDidChangeActiveTextEditor(this._onEvent,subscriptions);
+        window.onDidChangeTextEditorSelection(this._onEvent, this, subscriptions);
+        window.onDidChangeActiveTextEditor(this._onEvent, this, subscriptions);
 
         this._disposable = Disposable.from(...subscriptions);
     }
