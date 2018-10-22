@@ -1,16 +1,13 @@
 'use strict';
-import {window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} from 'vscode';
+import {window, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} from 'vscode';
 
 export function activate(context: ExtensionContext) {
-    console.log('Congratulations, your extension "WriterAssistant" is now active!');
+    let write_assistant = new WriterAssistant;
+    let controller      = new WriterAssistantController(write_assistant);
 
-    let wa = new WriterAssistant;    
-    let disposable = commands.registerCommand('extension.writerAssistant', () => {
-        wa.updateStatus();
-    });
     // リソース開放設定
-    context.subscriptions.push(wa);
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(write_assistant);
+    context.subscriptions.push(controller);
 }
 
 // this method is called when your extension is deactivated
@@ -64,8 +61,33 @@ class WriterAssistant {
         return count;
     }
 
-    // リソース開放用    
+    // リソース開放用
     dispose() {
         this._statusBarItem.dispose();
+    }
+}
+
+class WriterAssistantController {
+    private _writeAssistant: WriterAssistant;
+    private _disposable: Disposable;
+
+    constructor(wa: WriterAssistant) {
+        this._writeAssistant = wa;
+        this._writeAssistant.updateStatus();
+
+        let subscriptions:Disposable[] = [];
+        // カーソル位置変更時とアクティブエディタが変更されたときイベント起動
+        window.onDidChangeTextEditorSelection(this._onEvent, subscriptions);
+        window.onDidChangeActiveTextEditor(this._onEvent,subscriptions);
+
+        this._disposable = Disposable.from(...subscriptions);
+    }
+
+    private _onEvent() {
+        this._writeAssistant.updateStatus();
+    }
+
+    dispose() {
+        this._disposable.dispose();
     }
 }

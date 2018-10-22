@@ -11,17 +11,9 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.writerAssistant"
+        "onLanguage:markdown"
     ],
     "main": "./out/extension",
-    "contributes": {
-        "commands": [
-            {
-                "command": "extension.writerAssistant",
-                "title": "Writer Assistant"
-            }
-        ]
-    },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
