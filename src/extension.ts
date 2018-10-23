@@ -1,12 +1,12 @@
 'use strict';
-import {window, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} from 'vscode';
+import {window, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem} from 'vscode';
 
 export function activate(context: ExtensionContext) {
-    let write_assistant = new WriterAssistant;
-    let controller      = new WriterAssistantController(write_assistant);
+    let writeAssistant = new WriterAssistant;
+    let controller      = new WriterAssistantController(writeAssistant);
 
     // リソース開放設定
-    context.subscriptions.push(write_assistant);
+    context.subscriptions.push(writeAssistant);
     context.subscriptions.push(controller);
 }
 
@@ -34,8 +34,10 @@ class WriterAssistant {
         // エディタ内のドキュメントを取得
         let doc = editor.document;
         if(doc.languageId === 'markdown') {
-            let word_count = this._getWordCount(doc);
-            this._statusBarItem.text = `${word_count}文字`;
+            let docContext = doc.getText();
+            let wordCount  = this._getWordCount(docContext);
+            let kanjiCount = this._getKanjiCount(docContext);
+            this._statusBarItem.text = `$(pencil)${wordCount}文字  $(graph)漢字率${Math.round((kanjiCount / wordCount) * 100)}%`;
             this._statusBarItem.show();
         }
         else {
@@ -43,9 +45,8 @@ class WriterAssistant {
         }
     }
 
-    // 文字数カウント（非ASCII文字以外が対象）
-    private _getWordCount(doc: TextDocument): number {
-        let docContent = doc.getText();
+    // 文字数カウント
+    private _getWordCount(docContent: string): number {
         // カウントに含めない文字を削除する
         docContent = docContent
             .replace(/\s/g, '') // すべての空白文字
@@ -57,6 +58,11 @@ class WriterAssistant {
             characterCount = docContent.length;
         }
         return characterCount;
+    }
+
+    // テキスト中の漢字の出現数を表示
+    private _getKanjiCount(docContent: string): number {
+        return (docContent.match(/[\u4E00-\u9FFF\u3005-\u3006]/g) || []).length;
     }
 
     // リソース開放用
